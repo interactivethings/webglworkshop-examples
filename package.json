@@ -1,0 +1,24 @@
+{
+  "name": "webglworkshop",
+  "version": "1.0.0",
+  "description": "IxT webgl workshop example code",
+  "main": " ",
+  "dependencies": {
+    "gl-mesh3d": "^1.0.6",
+    "icosphere": "^1.0.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mhintz/webglworkshop-examples.git"
+  },
+  "author": "",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mhintz/webglworkshop-examples/issues"
+  },
+  "homepage": "https://github.com/mhintz/webglworkshop-examples#readme"
+}
