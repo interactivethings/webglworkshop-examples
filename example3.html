@@ -20,7 +20,8 @@
   precision highp float; // Not necessary, but makes it explicit
 
   uniform mat4 u_projectionMatrix;
-  uniform mat4 u_modelViewMatrix;
+  uniform mat4 u_modelWorldMatrix;
+  uniform mat4 u_worldViewMatrix;
 
   // uniform vec3 u_cameraPosition;
 
@@ -28,13 +29,14 @@
   attribute vec3 a_normal;
   attribute vec4 a_color;
 
-  // varying vec3 v_position;
+  varying vec3 v_position;
   varying vec3 v_normal;
   varying vec4 v_color;
 
   void main() {
-    gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1);
-    // v_position = a_position;
+    vec3 vertexWorldPosition = (u_modelWorldMatrix * vec4(a_position, 1)).xyz;
+    gl_Position = u_projectionMatrix * u_worldViewMatrix * vec4(vertexWorldPosition, 1);
+    v_position = vertexWorldPosition;
     v_normal = a_normal;
     v_color = a_color;
   }
@@ -43,12 +45,14 @@
 <script type="text/glsl" id='fragShader'>
   precision highp float;
 
+  varying vec3 v_position;
   varying vec3 v_normal;
   varying vec4 v_color;
 
   void main() {
     // gl_FragColor = vec4(clamp(v_normal, 0.1, 1.0), 1.0);
     // gl_FragColor = v_color * vec4(v_normal, 1);
+    // gl_FragColor = vec4(v_position, 1.0);
     gl_FragColor = v_color;
   }
 </script>
@@ -173,9 +177,9 @@
 
     // Misc variables used below
     let projMatLoc;
+    let viewMatLoc;
     let modelMatrix;
-    let modelViewMatrix;
-    let modelViewMatLoc;
+    let modelMatLoc;
     let posLoc;
     let normLoc;
     let colorLoc;
@@ -186,11 +190,13 @@
     projMatLoc = gl.getUniformLocation(earthShader, 'u_projectionMatrix');
     gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
 
-    modelMatrix = getModelMatrix(theEarth);
-    modelViewMatrix = mat4.multiply(mat4.create(), viewMatrices.viewMatrix, modelMatrix);
+    viewMatLoc = gl.getUniformLocation(earthShader, 'u_worldViewMatrix');
+    gl.uniformMatrix4fv(viewMatLoc, gl.FALSE, viewMatrices.viewMatrix);
 
-    modelViewMatLoc = gl.getUniformLocation(earthShader, 'u_modelViewMatrix');
-    gl.uniformMatrix4fv(modelViewMatLoc, gl.FALSE, modelViewMatrix);
+    modelMatrix = getModelMatrix(theEarth);
+
+    modelMatLoc = gl.getUniformLocation(earthShader, 'u_modelWorldMatrix');
+    gl.uniformMatrix4fv(modelMatLoc, gl.FALSE, modelMatrix);
 
     posLoc = gl.getAttribLocation(earthShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
@@ -215,11 +221,13 @@
     projMatLoc = gl.getUniformLocation(moonShader, 'u_projectionMatrix');
     gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
 
-    modelMatrix = getModelMatrix(theMoon);
-    modelViewMatrix = mat4.multiply(mat4.create(), viewMatrices.viewMatrix, modelMatrix);
+    viewMatLoc = gl.getUniformLocation(moonShader, 'u_worldViewMatrix');
+    gl.uniformMatrix4fv(viewMatLoc, gl.FALSE, viewMatrices.viewMatrix);
 
-    modelViewMatLoc = gl.getUniformLocation(moonShader, 'u_modelViewMatrix');
-    gl.uniformMatrix4fv(modelViewMatLoc, gl.FALSE, modelViewMatrix);
+    modelMatrix = getModelMatrix(theMoon);
+
+    modelMatLoc = gl.getUniformLocation(moonShader, 'u_modelWorldMatrix');
+    gl.uniformMatrix4fv(modelMatLoc, gl.FALSE, modelMatrix);
 
     posLoc = gl.getAttribLocation(moonShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
