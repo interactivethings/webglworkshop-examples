@@ -1,13 +1,31 @@
 'use strict';
 
-// Helper functions - DOM
+// Helper functions - Util
 const $ = (id) => document.getElementById(id);
+let start = Date.now();
+const elapsedTime = () => Date.now() - start;
 
 // Helper functions - Math
 const sin = Math.sin;
 const cos = Math.cos;
 const PI = Math.PI;
 const TWO_PI = 2 * Math.PI;
+const deg2Rad = (deg) => Math.PI * deg / 180;
+const rad2Deg = (rad) => 180 * rad / Math.PI;
+
+// Helper functions - color
+// const pos2HSV = 
+const randRGB = () => vec4.fromValues(Math.random(), Math.random(), Math.random(), 1);
+
+// Helper functions - Arrays / Buffers
+const flatten2 = (nested2) => nested2.reduce((chain, item) => chain.concat(item));
+const flatten2Buffer = (nestedArr, unitLength) => {
+  let buffer = new Float32Array(nestedArr.length * unitLength);
+  nestedArr.forEach((unit, idx) => {
+    buffer.set(unit, idx * unitLength);
+  });
+  return buffer;
+}
 
 function getShaderTypeName(shaderStage) {
   let type = gl.getShaderParameter(shaderStage, gl.SHADER_TYPE);

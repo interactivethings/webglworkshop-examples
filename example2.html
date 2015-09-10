@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width">
+  <title></title>
+  <style> html, body, canvas { display: block; position: relative; margin: 0; padding: 0; } </style>
+</head>
+<body onload='init()'>
+<canvas id='maincanvas' />
+</body>
+
+<script type="text/javascript" src="node_modules/gl-matrix/dist/gl-matrix-min.js"></script>
+
+<script type="text/javascript" src="shared.js"></script>
+<script type="text/javascript" src="icosahedron.js"></script>
+
+<script type="text/glsl" id='vertShader'>
+  precision highp float; // Not necessary, but makes it explicit
+
+  uniform mat4 u_projectionMatrix;
+  uniform mat4 u_modelViewMatrix;
+
+  attribute vec3 a_position;
+  // attribute vec3 a_normal;
+  attribute vec4 a_color;
+
+  // varying vec3 v_normal;
+  varying vec4 v_color;
+
+  void main() {
+    gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1);
+    // v_normal = a_normal;
+    v_color = a_color;
+    // v_color = abs(gl_Position);
+  }
+</script>
+
+<script type="text/glsl" id='fragShader'>
+  precision highp float;
+
+  // varying vec3 v_normal;
+  varying vec4 v_color;
+
+  void main() {
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+  'use strict';
+
+  // Be forewarned: OpenGL LOVES global variables and state
+  const gl = document.getElementById('maincanvas').getContext('webgl');
+
+  const exampleShader = compileShaderProgram('vertShader', 'fragShader');
+
+  const viewMatrices = {};
+
+  const icosahedronMesh = postProcessIcoMesh(icosphere(1));
+
+  function postProcessIcoMesh(complex) {
+    console.log(complex);
+
+    let vertices = complex.positions;
+    let faceIndices = complex.cells;
+
+    let expandedPositions = [];
+    let normals = [];
+    let colors = [];
+
+    faceIndices.forEach((face, idx) => {
+      let v0 = vec3.clone(vertices[face[0]]);
+      let v1 = vec3.clone(vertices[face[1]]);
+      let v2 = vec3.clone(vertices[face[2]]);
+      expandedPositions.push(v0, v1, v2);
+
+      let c0 = randRGB();
+      let c1 = randRGB();
+      let c2 = randRGB();
+      // Flat color shading, since all vertices have the same color
+      // c0 = c1 = c2;
+      colors.push(c0, c1, c2);
+    });
+
+    let numVertexElements = 3;
+    let numNormalElements = 3;
+    let numColorElements = 4;
+
+    let verticesData = flatten2Buffer(expandedPositions, numVertexElements);
+    let normalsData = flatten2Buffer(normals, numNormalElements);
+    let colorsData = flatten2Buffer(colors, numColorElements);
+
+    return {
+      // Mesh information
+      numVertices: expandedPositions.length,
+      modelPosition: vec3.create(),
+      modelRotationMatrix: mat4.create(),
+      // Buffers and buffer information
+      verticesBuffer: prepareGLBuffer(verticesData, gl.STATIC_DRAW),
+      verticesBufferUnitCount: numVertexElements,
+      verticesBufferType: gl.FLOAT,
+      verticesBufferStride: verticesData.BYTES_PER_ELEMENT * numVertexElements,
+      verticesBufferOffset: 0,
+      normalsBuffer: prepareGLBuffer(normalsData, gl.STATIC_DRAW),
+      normalsBufferUnitCount: numNormalElements,
+      normalsBufferType: gl.FLOAT,
+      normalsBufferStride: normalsData.BYTES_PER_ELEMENT * numNormalElements,
+      normalsBufferOffset: 0,
+      colorsBuffer: prepareGLBuffer(colorsData, gl.STATIC_DRAW),
+      colorsBufferUnitCount: numColorElements,
+      colorsBufferType: gl.FLOAT,
+      colorsBufferStride: colorsData.BYTES_PER_ELEMENT * numColorElements,
+      colorsBufferOffset: 0
+    };
+  }
+
+  function setup() {
+    let canvasWidth = window.innerWidth;
+    let canvasHeight = window.innerHeight;
+    gl.canvas.setAttribute('width', canvasWidth);
+    gl.canvas.setAttribute('height', canvasHeight);
+    gl.viewport(0, 0, canvasWidth, canvasHeight);
+
+    gl.clearColor(0, 0, 0, 1);
+    gl.enable(gl.CULL_FACE);
+
+    viewMatrices.projectionMatrix = mat4.perspective(mat4.create(), deg2Rad(25), canvasWidth / canvasHeight, 0.01, 50);
+    viewMatrices.viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(0, 0, 9), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+  }
+
+  function draw() {
+    // Animation
+
+    icosahedronMesh.modelPosition[0] = 2; //sin(0.004 * elapsedTime());
+    mat4.rotateY(icosahedronMesh.modelRotationMatrix, icosahedronMesh.modelRotationMatrix, -0.003 * PI);
+
+    // Drawing
+    gl.clear(gl.COLOR_BUFFER_BIT);
+
+    gl.useProgram(exampleShader);
+
+    let projMatLoc = gl.getUniformLocation(exampleShader, 'u_projectionMatrix');
+    gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
+
+    let modelMatrix = mat4.create();
+    mat4.multiply(modelMatrix, modelMatrix, icosahedronMesh.modelRotationMatrix);
+    mat4.translate(modelMatrix, modelMatrix, icosahedronMesh.modelPosition);
+    let modelViewMatrix = mat4.multiply(mat4.create(), viewMatrices.viewMatrix, modelMatrix);
+
+    let modelViewMatLoc = gl.getUniformLocation(exampleShader, 'u_modelViewMatrix');
+    gl.uniformMatrix4fv(modelViewMatLoc, gl.FALSE, modelViewMatrix);
+
+    let posLoc = gl.getAttribLocation(exampleShader, 'a_position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, icosahedronMesh.verticesBuffer);
+    gl.vertexAttribPointer(posLoc, icosahedronMesh.verticesBufferUnitCount, icosahedronMesh.verticesBufferType, gl.FALSE, icosahedronMesh.verticesBufferStride, icosahedronMesh.verticesBufferOffset);
+
+    let colorLoc = gl.getAttribLocation(exampleShader, 'a_color');
+    gl.enableVertexAttribArray(colorLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, icosahedronMesh.colorsBuffer);
+    gl.vertexAttribPointer(colorLoc, icosahedronMesh.colorsBufferUnitCount, icosahedronMesh.colorsBufferType, gl.FALSE, icosahedronMesh.colorsBufferStride, icosahedronMesh.colorsBufferOffset);
+
+    gl.drawArrays(gl.TRIANGLES, 0, icosahedronMesh.numVertices);
+  }
+
+  function prepareGLBuffer(bufferData, bufferUsage) {
+    let bufferId = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.bufferData(gl.ARRAY_BUFFER, bufferData, bufferUsage);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    return bufferId;
+  }
+
+  function init() {
+    let loop = () => { draw(), requestAnimationFrame(loop); }
+    // Setup once, then infinite draw
+    setup();
+    loop();
+  }
+
+</script>
+
+</html>
