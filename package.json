@@ -4,7 +4,7 @@
   "description": "IxT webgl workshop example code",
   "main": " ",
   "dependencies": {
-    "gl-mesh3d": "^1.0.6",
+    "gl-matrix": "^2.3.1",
     "icosphere": "^1.0.0"
   },
   "devDependencies": {},
