@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width">
+  <title></title>
+  <style> html, body, canvas { display: block; position: relative; margin: 0; padding: 0; } </style>
+</head>
+<body onload='init()'>
+<canvas id='maincanvas' />
+</body>
+
+<script type="text/javascript" src="node_modules/gl-matrix/dist/gl-matrix-min.js"></script>
+
+<script type="text/javascript" src="shared.js"></script>
+<script type="text/javascript" src="icosahedron.js"></script>
+
+<script type="text/glsl" id='vertShader'>
+  precision highp float; // Not necessary, but makes it explicit
+
+  uniform mat4 u_projectionMatrix;
+  uniform mat4 u_modelViewMatrix;
+
+  // uniform vec3 u_cameraPosition;
+
+  attribute vec3 a_position;
+  attribute vec3 a_normal;
+  attribute vec4 a_color;
+
+  // varying vec3 v_position;
+  varying vec3 v_normal;
+  varying vec4 v_color;
+
+  void main() {
+    gl_Position = u_projectionMatrix * u_modelViewMatrix * vec4(a_position, 1);
+    // v_position = a_position;
+    v_normal = a_normal;
+    v_color = a_color;
+  }
+</script>
+
+<script type="text/glsl" id='fragShader'>
+  precision highp float;
+
+  varying vec3 v_normal;
+  varying vec4 v_color;
+
+  void main() {
+    // gl_FragColor = vec4(clamp(v_normal, 0.1, 1.0), 1.0);
+    // gl_FragColor = v_color * vec4(v_normal, 1);
+    gl_FragColor = v_color;
+  }
+</script>
+
+<script>
+  'use strict';
+
+  // Be forewarned: OpenGL LOVES global variables and state
+  const gl = document.getElementById('maincanvas').getContext('webgl');
+
+  const exampleShader = compileShaderProgram('vertShader', 'fragShader');
+
+  const viewMatrices = {};
+
+  const theEarth = postProcessIcoMesh(icosphere(1));
+  const theMoon = postProcessIcoMesh(icosphere(0));
+
+  const earthShader = exampleShader;
+  const moonShader = exampleShader;
+
+  function postProcessIcoMesh(complex) {
+    let vertices = complex.positions;
+    let faceIndices = complex.cells;
+
+    let expandedPositions = [];
+    let normals = [];
+    let colors = [];
+
+    faceIndices.forEach((face, idx) => {
+      let v0 = vec3.clone(vertices[face[0]]);
+      let v1 = vec3.clone(vertices[face[1]]);
+      let v2 = vec3.clone(vertices[face[2]]);
+      expandedPositions.push(v0, v1, v2);
+
+      let side1 = vec3.sub(vec3.create(), v1, v0);
+      let side2 = vec3.sub(vec3.create(), v2, v0);
+      let normal = vec3.cross(vec3.create(), side1, side2);
+
+      normals.push(normal, normal, normal);
+      // normals.push(v0, v1, v2);
+
+      let c0 = randRGB();
+      let c1 = randRGB();
+      let c2 = randRGB();
+      // Flat color shading, since all vertices have the same color
+      c0 = c1 = c2;
+      colors.push(c0, c1, c2);
+    });
+
+    for (var idx = 0; idx < normals.length; ++idx) {
+      let nrml = normals[idx];
+      vec3.normalize(nrml, nrml);
+    }
+
+    let numVertexElements = 3;
+    let numNormalElements = 3;
+    let numColorElements = 4;
+
+    let verticesData = flatten2Buffer(expandedPositions, numVertexElements);
+    let normalsData = flatten2Buffer(normals, numNormalElements);
+    let colorsData = flatten2Buffer(colors, numColorElements);
+
+    return {
+      // Mesh information
+      numVertices: expandedPositions.length,
+      modelPosition: vec3.create(),
+      modelRotationMatrix: mat4.create(),
+      modelScale: vec3.fromValues(1, 1, 1),
+      // Buffers and buffer information
+      verticesBuffer: prepareGLBuffer(verticesData, gl.STATIC_DRAW),
+      verticesBufferUnitCount: numVertexElements,
+      verticesBufferType: gl.FLOAT,
+      verticesBufferStride: verticesData.BYTES_PER_ELEMENT * numVertexElements,
+      verticesBufferOffset: 0,
+      normalsBuffer: prepareGLBuffer(normalsData, gl.STATIC_DRAW),
+      normalsBufferUnitCount: numNormalElements,
+      normalsBufferType: gl.FLOAT,
+      normalsBufferStride: normalsData.BYTES_PER_ELEMENT * numNormalElements,
+      normalsBufferOffset: 0,
+      colorsBuffer: prepareGLBuffer(colorsData, gl.STATIC_DRAW),
+      colorsBufferUnitCount: numColorElements,
+      colorsBufferType: gl.FLOAT,
+      colorsBufferStride: colorsData.BYTES_PER_ELEMENT * numColorElements,
+      colorsBufferOffset: 0
+    };
+  }
+
+  function getModelMatrix(modelMesh) {
+    let combinedMatrix = mat4.create();
+    mat4.translate(combinedMatrix, combinedMatrix, modelMesh.modelPosition);
+    mat4.multiply(combinedMatrix, combinedMatrix, modelMesh.modelRotationMatrix);
+    mat4.scale(combinedMatrix, combinedMatrix, modelMesh.modelScale);
+    return combinedMatrix;
+  }
+
+  function setup() {
+    let canvasWidth = window.innerWidth;
+    let canvasHeight = window.innerHeight;
+    gl.canvas.setAttribute('width', canvasWidth);
+    gl.canvas.setAttribute('height', canvasHeight);
+    gl.viewport(0, 0, canvasWidth, canvasHeight);
+
+    gl.clearColor(0, 0, 0, 1);
+    gl.enable(gl.CULL_FACE);
+    gl.enable(gl.DEPTH_TEST);
+
+    viewMatrices.projectionMatrix = mat4.perspective(mat4.create(), deg2Rad(25), canvasWidth / canvasHeight, 0.01, 50);
+    viewMatrices.viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(0, 0, 9), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+
+    theMoon.modelScale = vec3.fromValues(0.2, 0.2, 0.2);
+  }
+
+  function draw() {
+    // Animation
+    theMoon.modelPosition[0] = 3 * cos(0.001 * elapsedTime());
+    theMoon.modelPosition[2] = 3 * sin(0.001 * elapsedTime());
+    mat4.rotateY(theMoon.modelRotationMatrix, theMoon.modelRotationMatrix, 0.006 * PI);
+    mat4.rotateY(theEarth.modelRotationMatrix, theEarth.modelRotationMatrix, -0.003 * PI);
+
+    // Drawing
+    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+    // Misc variables used below
+    let projMatLoc;
+    let modelMatrix;
+    let modelViewMatrix;
+    let modelViewMatLoc;
+    let posLoc;
+    let normLoc;
+    let colorLoc;
+
+    // Draw the Earth
+    gl.useProgram(earthShader);
+
+    projMatLoc = gl.getUniformLocation(earthShader, 'u_projectionMatrix');
+    gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
+
+    modelMatrix = getModelMatrix(theEarth);
+    modelViewMatrix = mat4.multiply(mat4.create(), viewMatrices.viewMatrix, modelMatrix);
+
+    modelViewMatLoc = gl.getUniformLocation(earthShader, 'u_modelViewMatrix');
+    gl.uniformMatrix4fv(modelViewMatLoc, gl.FALSE, modelViewMatrix);
+
+    posLoc = gl.getAttribLocation(earthShader, 'a_position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, theEarth.verticesBuffer);
+    gl.vertexAttribPointer(posLoc, theEarth.verticesBufferUnitCount, theEarth.verticesBufferType, gl.FALSE, theEarth.verticesBufferStride, theEarth.verticesBufferOffset);
+
+    normLoc = gl.getAttribLocation(earthShader, 'a_normal');
+    gl.enableVertexAttribArray(normLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, theEarth.normalsBuffer);
+    gl.vertexAttribPointer(normLoc, theEarth.normalsBufferUnitCount, theEarth.normalsBufferType, gl.FALSE, theEarth.normalsBufferStride, theEarth.normalsBufferOffset);
+
+    colorLoc = gl.getAttribLocation(earthShader, 'a_color');
+    gl.enableVertexAttribArray(colorLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, theEarth.colorsBuffer);
+    gl.vertexAttribPointer(colorLoc, theEarth.colorsBufferUnitCount, theEarth.colorsBufferType, gl.FALSE, theEarth.colorsBufferStride, theEarth.colorsBufferOffset);
+
+    gl.drawArrays(gl.TRIANGLES, 0, theEarth.numVertices);
+
+    // Draw the Moon
+    gl.useProgram(moonShader);
+
+    projMatLoc = gl.getUniformLocation(moonShader, 'u_projectionMatrix');
+    gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
+
+    modelMatrix = getModelMatrix(theMoon);
+    modelViewMatrix = mat4.multiply(mat4.create(), viewMatrices.viewMatrix, modelMatrix);
+
+    modelViewMatLoc = gl.getUniformLocation(moonShader, 'u_modelViewMatrix');
+    gl.uniformMatrix4fv(modelViewMatLoc, gl.FALSE, modelViewMatrix);
+
+    posLoc = gl.getAttribLocation(moonShader, 'a_position');
+    gl.enableVertexAttribArray(posLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, theMoon.verticesBuffer);
+    gl.vertexAttribPointer(posLoc, theMoon.verticesBufferUnitCount, theMoon.verticesBufferType, gl.FALSE, theMoon.verticesBufferStride, theMoon.verticesBufferOffset);
+
+    normLoc = gl.getAttribLocation(moonShader, 'a_normal');
+    gl.enableVertexAttribArray(normLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, theMoon.normalsBuffer);
+    gl.vertexAttribPointer(normLoc, theMoon.normalsBufferUnitCount, theMoon.normalsBufferType, gl.FALSE, theMoon.normalsBufferStride, theMoon.normalsBufferOffset);
+
+    colorLoc = gl.getAttribLocation(moonShader, 'a_color');
+    gl.enableVertexAttribArray(colorLoc);
+    gl.bindBuffer(gl.ARRAY_BUFFER, theMoon.colorsBuffer);
+    gl.vertexAttribPointer(colorLoc, theMoon.colorsBufferUnitCount, theMoon.colorsBufferType, gl.FALSE, theMoon.colorsBufferStride, theMoon.colorsBufferOffset);
+
+    gl.drawArrays(gl.TRIANGLES, 0, theMoon.numVertices);
+  }
+
+  function prepareGLBuffer(bufferData, bufferUsage) {
+    let bufferId = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, bufferId);
+    gl.bufferData(gl.ARRAY_BUFFER, bufferData, bufferUsage);
+    gl.bindBuffer(gl.ARRAY_BUFFER, null);
+    return bufferId;
+  }
+
+  function init() {
+    let loop = () => { draw(), requestAnimationFrame(loop); }
+    // Setup once, then infinite draw
+    setup();
+    loop();
+  }
+
+</script>
+
+</html>
