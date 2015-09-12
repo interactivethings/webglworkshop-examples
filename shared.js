@@ -4,6 +4,8 @@
 const $ = (id) => document.getElementById(id);
 let start = Date.now();
 const elapsedTime = () => Date.now() - start;
+const getPixelRatio = () => 'devicePixelRatio' in window && window.devicePixelRatio > 1 ? window.devicePixelRatio : 1;
+const getWebGLContext = (canvas) => canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
 
 // Helper functions - Math
 const sin = Math.sin;

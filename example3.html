@@ -61,7 +61,7 @@
   'use strict';
 
   // Be forewarned: OpenGL LOVES global variables and state
-  const gl = document.getElementById('maincanvas').getContext('webgl');
+  const gl = getWebGLContext(document.getElementById('maincanvas'));
 
   const exampleShader = compileShaderProgram('vertShader', 'fragShader');
 
@@ -149,10 +149,16 @@
   }
 
   function setup() {
-    let canvasWidth = window.innerWidth;
-    let canvasHeight = window.innerHeight;
-    gl.canvas.setAttribute('width', canvasWidth);
-    gl.canvas.setAttribute('height', canvasHeight);
+    let innerWidth = window.innerWidth;
+    let innerHeight = window.innerHeight;
+    let pixelRatio = getPixelRatio();
+    let canvasWidth = innerWidth * pixelRatio;
+    let canvasHeight = innerHeight * pixelRatio;
+
+    gl.canvas.width = canvasWidth;
+    gl.canvas.height = canvasHeight;
+    gl.canvas.style.width = innerWidth + 'px';
+    gl.canvas.style.height = innerHeight + 'px';
     gl.viewport(0, 0, canvasWidth, canvasHeight);
 
     gl.clearColor(0, 0, 0, 1);
