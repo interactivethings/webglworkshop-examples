@@ -22,7 +22,7 @@
   varying vec4 v_color;
 
   void main() {
-    gl_Position = vec4(a_position.xy , 0, 1);
+    gl_Position = a_position;
     v_color = a_color;
   }
 </script>
@@ -53,6 +53,8 @@
     gl.canvas.setAttribute('height', canvasHeight);
     gl.viewport(0, 0, canvasWidth, canvasHeight);
     gl.clearColor(0, 0, 0, 1);
+
+    gl.enable(gl.CULL_FACE);
   }
 
   function draw() {
@@ -78,16 +80,18 @@
   function TrianglePositions() {
     let ar = gl.canvas.width / gl.canvas.height;
 
-    let bufferVertices = new Float32Array([
+    let bufferVertices;
+
+    bufferVertices = new Float32Array([
       0, 0.5, 0, 1,
+      -0.5, -0.5, 0, 1,
       0.5, -0.5, 0, 1,
-      -0.5, -0.5, 0, 1
     ]);
 
-    // let bufferVertices = new Float32Array([
-      // cos(PI / 2) * 0.5, sin(PI / 2) * 0.5, 0.0, 1.0,
-      // cos(TWO_PI / 3 + PI / 2) * 0.5, sin(TWO_PI / 3 + PI / 2) * 0.5, 0.0, 1.0,
-      // cos(2 * TWO_PI / 3 + PI / 2) * 0.5, sin(2 * TWO_PI / 3 + PI / 2) * 0.5, 0.0, 1.0,
+    // bufferVertices = new Float32Array([
+    //   cos(PI / 2) * 0.5, sin(PI / 2) * 0.5, 0.0, 1.0,
+    //   cos(TWO_PI / 3 + PI / 2) * 0.5, sin(TWO_PI / 3 + PI / 2) * 0.5, 0.0, 1.0,
+    //   cos(2 * TWO_PI / 3 + PI / 2) * 0.5, sin(2 * TWO_PI / 3 + PI / 2) * 0.5, 0.0, 1.0,
     // ]);
 
     return prepareStaticBuffer(bufferVertices);
