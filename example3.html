@@ -21,9 +21,8 @@
 
   uniform mat4 u_projectionMatrix;
   uniform mat4 u_modelWorldMatrix;
+  uniform mat4 u_modelWorldMatrix_IT;
   uniform mat4 u_worldViewMatrix;
-
-  // uniform vec3 u_cameraPosition;
 
   attribute vec3 a_position;
   attribute vec3 a_normal;
@@ -37,7 +36,7 @@
     vec3 vertexWorldPosition = (u_modelWorldMatrix * vec4(a_position, 1)).xyz;
     gl_Position = u_projectionMatrix * u_worldViewMatrix * vec4(vertexWorldPosition, 1);
     v_position = vertexWorldPosition;
-    v_normal = a_normal;
+    v_normal = (u_modelWorldMatrix_IT * vec4(a_normal, 1)).xyz;
     v_color = a_color;
   }
 </script>
@@ -45,15 +44,20 @@
 <script type="text/glsl" id='fragShader'>
   precision highp float;
 
+  uniform vec3 u_lightWorldPosition;
+
   varying vec3 v_position;
   varying vec3 v_normal;
   varying vec4 v_color;
 
   void main() {
+    vec3 n_normal = normalize(v_normal);
+    vec3 tocamera = normalize(u_lightWorldPosition - v_position);
     // gl_FragColor = vec4(clamp(v_normal, 0.1, 1.0), 1.0);
     // gl_FragColor = v_color * vec4(v_normal, 1);
     // gl_FragColor = vec4(v_position, 1.0);
-    gl_FragColor = v_color;
+    float incidence = dot(tocamera, n_normal);
+    gl_FragColor = vec4(pow(clamp(incidence, 0., 1.), 2.5) * v_color.rgb, 1.);
   }
 </script>
 
@@ -67,7 +71,7 @@
 
   const viewMatrices = {};
 
-  const theEarth = postProcessIcoMesh(icosphere(1));
+  const theEarth = postProcessIcoMesh(icosphere(5));
   const theMoon = postProcessIcoMesh(icosphere(0));
 
   const earthShader = exampleShader;
@@ -164,9 +168,13 @@
     gl.clearColor(0, 0, 0, 1);
     gl.enable(gl.CULL_FACE);
     gl.enable(gl.DEPTH_TEST);
+    gl.frontFace(gl.CCW);
 
     viewMatrices.projectionMatrix = mat4.perspective(mat4.create(), deg2Rad(25), canvasWidth / canvasHeight, 0.01, 50);
-    viewMatrices.viewMatrix = mat4.lookAt(mat4.create(), vec3.fromValues(0, 0, 9), vec3.fromValues(0, 0, 0), vec3.fromValues(0, 1, 0));
+    viewMatrices.cameraPosition = vec3.fromValues(0, 0, 9);
+    viewMatrices.cameraTarget = vec3.fromValues(0, 0, 0);
+    viewMatrices.cameraUp = vec3.fromValues(0, 1, 0);
+    viewMatrices.viewMatrix = mat4.lookAt(mat4.create(), viewMatrices.cameraPosition, viewMatrices.cameraTarget, viewMatrices.cameraUp);
 
     theMoon.modelScale = vec3.fromValues(0.2, 0.2, 0.2);
   }
@@ -182,16 +190,24 @@
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Misc variables used below
+    let lightPosLoc;
     let projMatLoc;
     let viewMatLoc;
     let modelMatrix;
     let modelMatLoc;
+    let modelMatrixIT;
+    let modelMatITLoc;
     let posLoc;
     let normLoc;
     let colorLoc;
 
+    let lightPosition = vec3.add(vec3.create(), viewMatrices.cameraPosition, vec3.fromValues(4, 10, 4));
+
     // Draw the Earth
     gl.useProgram(earthShader);
+
+    lightPosLoc = gl.getUniformLocation(earthShader, 'u_lightWorldPosition');
+    gl.uniform3fv(lightPosLoc, lightPosition);
 
     projMatLoc = gl.getUniformLocation(earthShader, 'u_projectionMatrix');
     gl.uniformMatrix4fv(projMatLoc, false, viewMatrices.projectionMatrix);
@@ -203,6 +219,11 @@
 
     modelMatLoc = gl.getUniformLocation(earthShader, 'u_modelWorldMatrix');
     gl.uniformMatrix4fv(modelMatLoc, false, modelMatrix);
+
+    modelMatrixIT = mat4.transpose(mat4.create(), mat4.invert(mat4.create(), modelMatrix));
+
+    modelMatITLoc = gl.getUniformLocation(earthShader, 'u_modelWorldMatrix_IT');
+    gl.uniformMatrix4fv(modelMatITLoc, false, modelMatrixIT);
 
     posLoc = gl.getAttribLocation(earthShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
@@ -224,6 +245,9 @@
     // Draw the Moon
     gl.useProgram(moonShader);
 
+    lightPosLoc = gl.getUniformLocation(moonShader, 'u_lightWorldPosition');
+    gl.uniform3fv(lightPosLoc, lightPosition);
+
     projMatLoc = gl.getUniformLocation(moonShader, 'u_projectionMatrix');
     gl.uniformMatrix4fv(projMatLoc, false, viewMatrices.projectionMatrix);
 
@@ -234,6 +258,11 @@
 
     modelMatLoc = gl.getUniformLocation(moonShader, 'u_modelWorldMatrix');
     gl.uniformMatrix4fv(modelMatLoc, false, modelMatrix);
+
+    modelMatrixIT = mat4.transpose(mat4.create(), mat4.invert(mat4.create(), modelMatrix));
+
+    modelMatITLoc = gl.getUniformLocation(moonShader, 'u_modelWorldMatrix_IT');
+    gl.uniformMatrix4fv(modelMatITLoc, false, modelMatrixIT);
 
     posLoc = gl.getAttribLocation(moonShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
