@@ -94,9 +94,9 @@
       normals.push(normal, normal, normal);
       // normals.push(v0, v1, v2);
 
-      let c0 = randRGB();
-      let c1 = randRGB();
-      let c2 = randRGB();
+      let c0 = randRGBInt();
+      let c1 = randRGBInt();
+      let c2 = randRGBInt();
       // Flat color shading, since all vertices have the same color
       c0 = c1 = c2;
       colors.push(c0, c1, c2);
@@ -113,7 +113,7 @@
 
     let verticesData = flatten2Buffer(expandedPositions, numVertexElements);
     let normalsData = flatten2Buffer(normals, numNormalElements);
-    let colorsData = flatten2Buffer(colors, numColorElements);
+    let colorsData = flatten2UIntBuffer(colors, numColorElements);
 
     return {
       // Mesh information
@@ -134,7 +134,7 @@
       normalsBufferOffset: 0,
       colorsBuffer: prepareGLBuffer(colorsData, gl.STATIC_DRAW),
       colorsBufferUnitCount: numColorElements,
-      colorsBufferType: gl.FLOAT,
+      colorsBufferType: gl.UNSIGNED_BYTE,
       colorsBufferStride: colorsData.BYTES_PER_ELEMENT * numColorElements,
       colorsBufferOffset: 0
     };
@@ -217,7 +217,7 @@
     colorLoc = gl.getAttribLocation(earthShader, 'a_color');
     gl.enableVertexAttribArray(colorLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, theEarth.colorsBuffer);
-    gl.vertexAttribPointer(colorLoc, theEarth.colorsBufferUnitCount, theEarth.colorsBufferType, gl.FALSE, theEarth.colorsBufferStride, theEarth.colorsBufferOffset);
+    gl.vertexAttribPointer(colorLoc, theEarth.colorsBufferUnitCount, theEarth.colorsBufferType, true, theEarth.colorsBufferStride, theEarth.colorsBufferOffset);
 
     gl.drawArrays(gl.TRIANGLES, 0, theEarth.numVertices);
 
@@ -248,7 +248,7 @@
     colorLoc = gl.getAttribLocation(moonShader, 'a_color');
     gl.enableVertexAttribArray(colorLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, theMoon.colorsBuffer);
-    gl.vertexAttribPointer(colorLoc, theMoon.colorsBufferUnitCount, theMoon.colorsBufferType, gl.FALSE, theMoon.colorsBufferStride, theMoon.colorsBufferOffset);
+    gl.vertexAttribPointer(colorLoc, theMoon.colorsBufferUnitCount, theMoon.colorsBufferType, true, theMoon.colorsBufferStride, theMoon.colorsBufferOffset);
 
     gl.drawArrays(gl.TRIANGLES, 0, theMoon.numVertices);
   }

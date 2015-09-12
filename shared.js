@@ -14,13 +14,25 @@ const PI = Math.PI;
 const TWO_PI = 2 * Math.PI;
 const deg2Rad = (deg) => Math.PI * deg / 180;
 const rad2Deg = (rad) => 180 * rad / Math.PI;
+const randNum = (lo, hi) => {
+  if (typeof hi === 'undefined') {
+    if (typeof lo === 'undefined') {
+      lo = 1;
+    }
+    hi = lo;
+    lo = 0;
+  }
+  return lo + (hi - lo) * Math.random();
+};
 
 // Helper functions - color
 // const pos2HSV = 
 const randRGB = () => vec4.fromValues(Math.random(), Math.random(), Math.random(), 1);
+const randRGBInt = () => [randNum(255), randNum(255), randNum(255), 255];
 
 // Helper functions - Arrays / Buffers
 const flatten2 = (nested2) => nested2.reduce((chain, item) => chain.concat(item));
+
 const flatten2Buffer = (nestedArr, unitLength) => {
   let buffer = new Float32Array(nestedArr.length * unitLength);
   nestedArr.forEach((unit, idx) => {
@@ -29,6 +41,15 @@ const flatten2Buffer = (nestedArr, unitLength) => {
   return buffer;
 }
 
+const flatten2UIntBuffer = (nestedArr, unitLength) => {
+  let buffer = new Uint8Array(nestedArr.length * unitLength);
+  nestedArr.forEach((unit, idx) => {
+    buffer.set(unit, idx * unitLength);
+  });
+  return buffer;
+};
+
+// Helper functions - Shaders
 function getShaderTypeName(shaderStage) {
   let type = gl.getShaderParameter(shaderStage, gl.SHADER_TYPE);
 
