@@ -140,7 +140,7 @@
     gl.useProgram(exampleShader);
 
     let projMatLoc = gl.getUniformLocation(exampleShader, 'u_projectionMatrix');
-    gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
+    gl.uniformMatrix4fv(projMatLoc, false, viewMatrices.projectionMatrix);
 
     let modelMatrix = mat4.create();
     mat4.multiply(modelMatrix, modelMatrix, icosahedronMesh.modelRotationMatrix);
@@ -148,17 +148,17 @@
     let modelViewMatrix = mat4.multiply(mat4.create(), viewMatrices.viewMatrix, modelMatrix);
 
     let modelViewMatLoc = gl.getUniformLocation(exampleShader, 'u_modelViewMatrix');
-    gl.uniformMatrix4fv(modelViewMatLoc, gl.FALSE, modelViewMatrix);
+    gl.uniformMatrix4fv(modelViewMatLoc, false, modelViewMatrix);
 
     let posLoc = gl.getAttribLocation(exampleShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, icosahedronMesh.verticesBuffer);
-    gl.vertexAttribPointer(posLoc, icosahedronMesh.verticesBufferUnitCount, icosahedronMesh.verticesBufferType, gl.FALSE, icosahedronMesh.verticesBufferStride, icosahedronMesh.verticesBufferOffset);
+    gl.vertexAttribPointer(posLoc, icosahedronMesh.verticesBufferUnitCount, icosahedronMesh.verticesBufferType, false, icosahedronMesh.verticesBufferStride, icosahedronMesh.verticesBufferOffset);
 
     let colorLoc = gl.getAttribLocation(exampleShader, 'a_color');
     gl.enableVertexAttribArray(colorLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, icosahedronMesh.colorsBuffer);
-    gl.vertexAttribPointer(colorLoc, icosahedronMesh.colorsBufferUnitCount, icosahedronMesh.colorsBufferType, gl.FALSE, icosahedronMesh.colorsBufferStride, icosahedronMesh.colorsBufferOffset);
+    gl.vertexAttribPointer(colorLoc, icosahedronMesh.colorsBufferUnitCount, icosahedronMesh.colorsBufferType, false, icosahedronMesh.colorsBufferStride, icosahedronMesh.colorsBufferOffset);
 
     gl.drawArrays(gl.TRIANGLES, 0, icosahedronMesh.numVertices);
   }

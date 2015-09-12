@@ -63,14 +63,14 @@
     let posLoc = gl.getAttribLocation(exampleShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleBuffer);
-    gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, gl.FALSE, 0, 0);
-    // gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, gl.FALSE, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+    gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, false, 0, 0);
+    // gl.vertexAttribPointer(posLoc, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
 
     let colorLoc = gl.getAttribLocation(exampleShader, 'a_color');
     gl.enableVertexAttribArray(colorLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, triangleColors);
-    gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, gl.FALSE, 0, 0);
-    // gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, gl.FALSE, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
+    gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 0, 0);
+    // gl.vertexAttribPointer(colorLoc, 4, gl.FLOAT, false, 4 * Float32Array.BYTES_PER_ELEMENT, 0);
 
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   }

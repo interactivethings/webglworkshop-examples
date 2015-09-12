@@ -194,25 +194,25 @@
     gl.useProgram(earthShader);
 
     projMatLoc = gl.getUniformLocation(earthShader, 'u_projectionMatrix');
-    gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
+    gl.uniformMatrix4fv(projMatLoc, false, viewMatrices.projectionMatrix);
 
     viewMatLoc = gl.getUniformLocation(earthShader, 'u_worldViewMatrix');
-    gl.uniformMatrix4fv(viewMatLoc, gl.FALSE, viewMatrices.viewMatrix);
+    gl.uniformMatrix4fv(viewMatLoc, false, viewMatrices.viewMatrix);
 
     modelMatrix = getModelMatrix(theEarth);
 
     modelMatLoc = gl.getUniformLocation(earthShader, 'u_modelWorldMatrix');
-    gl.uniformMatrix4fv(modelMatLoc, gl.FALSE, modelMatrix);
+    gl.uniformMatrix4fv(modelMatLoc, false, modelMatrix);
 
     posLoc = gl.getAttribLocation(earthShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, theEarth.verticesBuffer);
-    gl.vertexAttribPointer(posLoc, theEarth.verticesBufferUnitCount, theEarth.verticesBufferType, gl.FALSE, theEarth.verticesBufferStride, theEarth.verticesBufferOffset);
+    gl.vertexAttribPointer(posLoc, theEarth.verticesBufferUnitCount, theEarth.verticesBufferType, false, theEarth.verticesBufferStride, theEarth.verticesBufferOffset);
 
     normLoc = gl.getAttribLocation(earthShader, 'a_normal');
     gl.enableVertexAttribArray(normLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, theEarth.normalsBuffer);
-    gl.vertexAttribPointer(normLoc, theEarth.normalsBufferUnitCount, theEarth.normalsBufferType, gl.FALSE, theEarth.normalsBufferStride, theEarth.normalsBufferOffset);
+    gl.vertexAttribPointer(normLoc, theEarth.normalsBufferUnitCount, theEarth.normalsBufferType, false, theEarth.normalsBufferStride, theEarth.normalsBufferOffset);
 
     colorLoc = gl.getAttribLocation(earthShader, 'a_color');
     gl.enableVertexAttribArray(colorLoc);
@@ -225,25 +225,25 @@
     gl.useProgram(moonShader);
 
     projMatLoc = gl.getUniformLocation(moonShader, 'u_projectionMatrix');
-    gl.uniformMatrix4fv(projMatLoc, gl.FALSE, viewMatrices.projectionMatrix);
+    gl.uniformMatrix4fv(projMatLoc, false, viewMatrices.projectionMatrix);
 
     viewMatLoc = gl.getUniformLocation(moonShader, 'u_worldViewMatrix');
-    gl.uniformMatrix4fv(viewMatLoc, gl.FALSE, viewMatrices.viewMatrix);
+    gl.uniformMatrix4fv(viewMatLoc, false, viewMatrices.viewMatrix);
 
     modelMatrix = getModelMatrix(theMoon);
 
     modelMatLoc = gl.getUniformLocation(moonShader, 'u_modelWorldMatrix');
-    gl.uniformMatrix4fv(modelMatLoc, gl.FALSE, modelMatrix);
+    gl.uniformMatrix4fv(modelMatLoc, false, modelMatrix);
 
     posLoc = gl.getAttribLocation(moonShader, 'a_position');
     gl.enableVertexAttribArray(posLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, theMoon.verticesBuffer);
-    gl.vertexAttribPointer(posLoc, theMoon.verticesBufferUnitCount, theMoon.verticesBufferType, gl.FALSE, theMoon.verticesBufferStride, theMoon.verticesBufferOffset);
+    gl.vertexAttribPointer(posLoc, theMoon.verticesBufferUnitCount, theMoon.verticesBufferType, false, theMoon.verticesBufferStride, theMoon.verticesBufferOffset);
 
     normLoc = gl.getAttribLocation(moonShader, 'a_normal');
     gl.enableVertexAttribArray(normLoc);
     gl.bindBuffer(gl.ARRAY_BUFFER, theMoon.normalsBuffer);
-    gl.vertexAttribPointer(normLoc, theMoon.normalsBufferUnitCount, theMoon.normalsBufferType, gl.FALSE, theMoon.normalsBufferStride, theMoon.normalsBufferOffset);
+    gl.vertexAttribPointer(normLoc, theMoon.normalsBufferUnitCount, theMoon.normalsBufferType, false, theMoon.normalsBufferStride, theMoon.normalsBufferOffset);
 
     colorLoc = gl.getAttribLocation(moonShader, 'a_color');
     gl.enableVertexAttribArray(colorLoc);
